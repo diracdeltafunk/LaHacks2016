@@ -63,14 +63,14 @@ res = tf.reshape(res_flat, [-1, 19, 19])
 
 y1 = tf.placeholder(tf.float32, [None, 19, 19])
 
-cross_entropy = tf.reduce_mean(-tf.reduce_sum(y1 * tf.log(res), reduction_indices=[1]))
+cross_entropy = tf.reduce_mean(-tf.reduce_sum(y1 * tf.log(res), reduction_indices=[1,2]))
 train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 
 # accuracy
 pos_real_move = tf.argmax(tf.reshape(y1, [-1, 19 * 19]), 1)
 flattened_res = tf.reshape(res, [-1, 19 * 19])
 percent_predicted = tf.slice(flattened_res, pos_real_move, [-1, 1])
-predicted_tiled = tf.tile(tf.reshape(percent_predicted, [-1, 1, 1]), [1, 1, 19 * 19])
+predicted_tiled = tf.tile(percent_predicted, [1, 19 * 19])
 correct_prediction = tf.reduce_sum(tf.where(tf.greater_equal(flattened_res, predicted_tiled)))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
