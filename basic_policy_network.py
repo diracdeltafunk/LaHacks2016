@@ -1,5 +1,6 @@
 import tensorflow as tf
 import training_input
+import tarfile
 
 def weight(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)
@@ -43,8 +44,8 @@ b4 = bias([32])
 conv4 = tf.nn.relu(conv2d(conv3, w4) + b4)
 #pool4 = maxpool(conv4)
 
-w5 = weight([19 * 19 * 32, 1024])
-b5 = bias([1024])
+w5 = weight([19 * 19 * 32, 2048])
+b5 = bias([2048])
 
 #pool2_flat = tf.reshape(pool2, [-1, 7 * 7 * 64])
 flat = tf.reshape(conv4, [-1, 19 * 19 * 32])
@@ -53,10 +54,10 @@ dense0 = tf.nn.relu(tf.matmul(flat, w5) + b5)
 keep_prob = tf.placeholder(tf.float32)
 dense = tf.nn.dropout(dense0, keep_prob)
 
-w4 = weight([1024, 19, 19])
-b4 = bias([19, 19])
+w6 = weight([2048, 19, 19])
+b6 = bias([19, 19])
 
-res = tf.nn.softmax(tf.matmul(dense, w4) + b4)
+res = tf.nn.softmax(tf.matmul(dense, w6) + b6)
 
 y1 = tf.placeholder(tf.float32, [None, 19, 19])
 
