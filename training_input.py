@@ -3,8 +3,7 @@ import tarfile
 import re
 
 
-def getdata(filename):
-    tar = tarfile.open("pro.tar.gz", 'r:gz')
+def getdata(tar, filename):
     member = tar.getmember("pro/" + filename)
     f = tar.extractfile(member)
     data = str(f.read())
@@ -26,9 +25,6 @@ def getdata(filename):
         answer[x][y] = 0
     return res
 
-res = getdata("00010.sgf")
-arr = res[11][3]
-np.savetxt('test.txt', arr, '%d')
-
-
-
+# res = getdata(tar, "00010.sgf")
+# arr = res[11][3]
+# np.savetxt('test.txt', arr, '%d')
