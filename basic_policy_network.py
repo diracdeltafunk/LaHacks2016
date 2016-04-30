@@ -1,32 +1,23 @@
 import tensorflow as tf
-from tensorflow.examples.tutorials.mnist import input_data
-
-mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
-
+import training_input
 
 def weight(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)
     return tf.Variable(initial)
 
-
 def bias(shape):
     initial = tf.constant(0.1, shape=shape)
     return tf.Variable(initial)
 
-
 def conv2d(x, w):
     return tf.nn.conv2d(x, w, strides=[1, 1, 1, 1], padding='SAME')
-
 
 def maxpool(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
 sess = tf.InteractiveSession()
 
-
-x = tf.placeholder(tf.float32, [None, 784])
-
-x_image = tf.reshape(x, [-1, 28, 28, 1])
+x = tf.placeholder(tf.float32, [None, 19, 19, 3])
 
 w1 = weight([7, 7, 3, 48])
 b1 = bias([48])
@@ -71,22 +62,23 @@ y1 = tf.placeholder(tf.float32, [None, 19, 19])
 
 cross_entropy = tf.reduce_mean(-tf.reduce_sum(y1 * tf.log(res), reduction_indices=[1]))
 train_step = tf.train.GradientDescentOptimizer(0.5).tf.train.A.minimize(cross_entropy)
-correct_prediction = tf.equal(tf.argmax(res, 1), tf.argmax(y1, 1))
+
+# accuracy
+pos_real_move = tf.argmax(tf.reshape(y1, [-1, 19 * 19]), 1)
+flattened_res = tf.reshape(res, [-1, 19 * 19])
+percent_predicted = tf.slice(flattened_res, pos_real_move, [1])
+predicted_tiled = tf.tile(percent_predicted, [19 * 19])
+correct_prediction = tf.reduce_sum(tf.where(tf.greater_equal(flattened_res, predicted_tiled)))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 sess.run(tf.initialize_all_variables())
 
-for i in range(1000):
-    batch = mnist.train.next_batch(50)
-    if i % 100 == 0:
-        train_accuracy = accuracy.eval(feed_dict={
-            x: batch[0], y1: batch[1], keep_prob: 1.0})
-        print("step %d, training accuracy %g" % (i, train_accuracy))
-    train_step.run(feed_dict={x: batch[0], y1: batch[1], keep_prob: 0.5})
+tar = tarfile.open("pro.tar.gz", 'r:gz')
 
-print("test accuracy %g" % accuracy.eval(feed_dict={
-    x: mnist.test.images, y1: mnist.test.labels, keep_prob: 1.0}))
-
-
-
-
+with open('filenames.txt','r') as filenames:
+  for num, line in enumerate(filenames):
+      batch = getdata(tar,line)
+      if num % 10 = 0:
+          train_accuracy = accuracy.eval(feed_dict={x: batch[0], y1: batch[1], keep_prob: 1.0})
+          print("step %d, training accuracy %g" % (num, train_accuracy))
+      train_step.run(feed_dict={x: batch[0], y1: batch[1], keep_prob: 0.5})

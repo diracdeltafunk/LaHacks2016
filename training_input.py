@@ -2,7 +2,6 @@ import numpy as np
 import tarfile
 import re
 
-
 def getdata(tar, filename):
     member = tar.getmember("pro/" + filename)
     f = tar.extractfile(member)
