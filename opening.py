@@ -97,7 +97,7 @@ def oriented_move(board, diff):
         return False, [0, 0]
 
 def make_move(board):
-    b0 = board
+    b0 = numpy.copy(board)
     b1 = b0[::-1]
     b2 = numpy.transpose(b1, (1, 0, 2))
     b3 = b2[::-1]

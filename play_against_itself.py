@@ -113,7 +113,7 @@ with g2.as_default():
 ## BEGIN GAMEPLAY CODE
 
 num_moves_considered = 5
-depth_to_consider = 3
+depth_to_consider = 4
 
 class GameTree(object):
     def __init__(self, name=None, children=None):
@@ -235,22 +235,17 @@ def tMiniMax(tree):
 
 gameDone = False
 while not gameDone:
-#    print(showBoard())
     playMove()
- #   playBestMove()
- #   PlayRandomMove()
+    print('Smart Move:')
     print(showBoard())
-    player_entered_move = False
-    while not player_entered_move:
-      player_move = input('Enter your move, e.g. a15\n').lower()[:3]
-      if len(player_move) >= 2:
-          player_entered_move = True
-      else:
-          print('Couldn\'t understand move.')
-    if player_move == ":q":
+    gamestate = flip(gamestate)
+    playBestMove()
+    gamestate = flip(gamestate)
+    print('Instant Move:')
+    print(showBoard())
+    i = input('Press Q to quit or any other key to continue.\n').lower()
+    if i == 'q':
         gameDone = True
-    player_move_formatted = [ord(player_move[0]) - ord('a'), int(player_move[1:])]
-    gamestate = do_move(gamestate, player_move_formatted[::-1], False)
 
 sess1.close()
 sess2.close()
