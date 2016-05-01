@@ -42,8 +42,8 @@ w5_v = weight([19 * 19 * 32, 2048])
 b5_v = bias([2048])
 
 #pool2_flat = tf.reshape(pool2, [-1, 7 * 7 * 64])
-flat_v = tf.reshape(conv4_v, [batch_size_v, 19 * 19 * 32])
-dense0_v = tf.nn.relu(tf.matmul(flat, w5_v) + b5_v)
+flat_v = tf.reshape(conv4_v, [batch_size, 19 * 19 * 32])
+dense0_v = tf.nn.relu(tf.matmul(flat_v, w5_v) + b5_v)
 
 keep_prob_v = tf.placeholder(tf.float32)
 dense_v = tf.nn.dropout(dense0_v, keep_prob_v)
@@ -51,7 +51,7 @@ dense_v = tf.nn.dropout(dense0_v, keep_prob_v)
 w6_v = weight([2048, 2])
 b6_v = bias([2])
 
-res_flat_v = tf.nn.softmax(tf.matmul(dense, w6_v) + b6_v)
+res_flat_v = tf.nn.softmax(tf.matmul(dense_v, w6_v) + b6_v)
 
 res_v = tf.reshape(res_flat_v, [batch_size, 2])
 
@@ -77,9 +77,9 @@ with open('filenames.txt', 'r') as filenames:
         if not bad:
             if num % 100 == 0:
 #            print(res_flat.eval(feed_dict={x: batch_in, y1: batch_out, keep_prob: 1.0}))
-                train_accuracy = accuracy.eval(feed_dict={x: batch_in, y1: batch_out, keep_prob: 1.0})
+                train_accuracy = accuracy_v.eval(feed_dict={x_v: batch_in, y1_v: batch_out, keep_prob_v: 1.0})
                 print("step %d, training accuracy %.4f" % (num, train_accuracy))
             if num % 5000 == 4999:
                 saver.save(sess, 'saved_value_network.ckpt')
-            train_step.run(feed_dict={x: batch_in, y1: batch_out, keep_prob: 0.5})
+            train_step_v.run(feed_dict={x_v: batch_in, y1_v: batch_out, keep_prob_v: 0.5})
     save_path = saver.save(sess, 'saved_value_network_final.ckpt')
