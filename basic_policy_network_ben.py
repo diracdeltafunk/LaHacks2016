@@ -2,6 +2,7 @@ import tensorflow as tf
 import training_input as inp
 import tarfile
 import queue
+import random
 
 def weight(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)
@@ -74,29 +75,29 @@ correct_prediction = tf.reduce_sum(tf.where(tf.greater_equal(res_flat, predicted
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 with open('filenames.txt','r') as filenames:
-  sgflist = filenames.read().replace('\n','')
-
-def readSGF(filename_queue):
-    reader = tf.WholeFileReader()
-    sgf_file = reader.read(filename_queue)
-    return inp.getdata(sgf_file)
-
-def input_pipeline(filenames, batch_size, num_epochs=None):
-    filenames_queue = tf.train.string_input_producer(filenames, num_epochs=num_epochs, shuffle=True)
-    examples, labels = readSGF(filename_queue)
-    min_after_dequeue = 1000
-    capacity = min_after_dequeue + 3 * batch_size
-    example_batch, label_batch = tf.train.shuffle_batch([examples, labels], batch_size=batch_size, capacity=capacity, min_after_dequeue=min_after_dequeue, enqueue_many=True)
-    return example_batch, label_batch
+  sgflist = filenames.read().splitlines()
 
 with tf.Session() as sess:
+    def queueingThread(coord):
+        while not coord.should_stop():
+            next_file = sgflist.pop(0)
+            sgf_parses = shuffle(inp.getdata(tar, next_file))
+            training_queue_1.enqueue_many(sgf_parses)
+            training_queue_2.enqueue_many(sgf_parses)
+
+    def trainingThread1(coord):
+        while not coord.should_stop():
+            batch_in, batch_out = training_queue_1.dequeque_many(50)
+            train_step.run(feed_dict={x: batch_in, y: batch_out, keep_prob: 0.5})
+            print(accuray.eval(feed_dict={x: batch_in, y: batch_out, keep_prob: 1.0}))
+
+    training_queue_1 = tf.FIFOQueue(3500000, [tf.int32, tf.int32])
+    qr1 = tf.train.QueueRunner(training_queue_1, enqueue_ops=[queueingThread])
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
     sess.run(tf.initialize_all_variables())
     try:
-      while not coord.should_stop():
-        batch_in, batch_out = input_pipeline(sgflist, 50)
-        train_step.run(feed_dict={x: batch_in, y1: batch_out, keep_prob: 0.5})
+      trainingThread1(coord)
     except tf.errors.OutOfRangeError:
       print('Done training')
     finally:
