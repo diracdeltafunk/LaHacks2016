@@ -19,7 +19,7 @@ def gametree(s):
     output = Tree()
     firstparen = 1
     rootlabel = ""
-    while(firstparen < len(s) and s[firstparen] != "(" and s[firstparen] != ";"):
+    while firstparen < len(s) and s[firstparen] != "(" and s[firstparen] != ";":
         rootlabel += s[firstparen]
         firstparen += 1
     output.name = rootlabel
@@ -27,15 +27,15 @@ def gametree(s):
     stringy = ""
     names = list()
     for i in s:
-        if(i == ')'):
+        if i == ')':
             x -= 1
-        if(x > 0):
+        if x > 0:
             stringy += i
-        if(x == 0):
-            if(stringy != ""):
+        if x == 0:
+            if stringy != "":
                 names.append(stringy)
             stringy = ""
-        if(i == '('):
+        if i == '(':
             x += 1
     for name_i in names:
         output.add_child(gametree(name_i))
@@ -46,6 +46,7 @@ with open('fuseki.txt', 'r') as file:
 
 opening_moves = gametree(simplified)
 
+
 def boardsum(board):
     n = 0
     for i in range(19):
@@ -54,6 +55,7 @@ def boardsum(board):
                 n += board[i][j][k]
     return n
 
+
 def oriented_move(board):
     nomove = True
     node = opening_moves
@@ -61,16 +63,16 @@ def oriented_move(board):
     depth = 0
     while check_tree:
         if board[ord(node.name[2]) - ord('a')][ ord(node.name[3]) - ord('a')][depth % 2] == 1:
-            if len(node.children) != 0 :
+            if len(node.children) != 0:
                 node = node.children[1]
             elif depth >= boardsum(board):
                 nomove = False
-                return (True, (ord(node.name[2]) - ord('a'),  ord(node.name[3]) - ord('a')))
+                return True, (ord(node.name[2]) - ord('a'),  ord(node.name[3]) - ord('a'))
                 check_tree = False
             else:
                 check_tree = False
     if nomove:
-        return (False, [0,0])
+        return False, (0, 0)
 
 def make_move(board):
     b0 = board
@@ -84,11 +86,11 @@ def make_move(board):
     dihedral_group = [b0, b1, b2, b3, b4, b5, b6, b7]
     move_pending = True
     i = 0
-    while move_pending and i < 8 :
+    while move_pending and i < 8:
         if oriented_move(dihedral_group[i]):
             move_pending = False
             return oriented_move(dihedral_group[i])
         else:
             i += 1
-    if(move_pending):
-        return (False, (0,0))
+    if move_pending:
+        return False, (0,0)
