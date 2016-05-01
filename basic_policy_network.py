@@ -69,7 +69,7 @@ train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 # accuracy
 y1_flat = tf.reshape(y1, [-1, 19 * 19])
 pos_real_move = tf.argmax(y1_flat, 1)
-percent_predicted = tf.diag_part(tf.gather(tf.transpose(res_flat), pos_flat))
+percent_predicted = tf.diag_part(tf.transpose(tf.gather(tf.transpose(res_flat), pos_real_move)))
 predicted_tiled = tf.tile(percent_predicted, [1, 19 * 19])
 correct_prediction = tf.reduce_sum(tf.where(tf.greater_equal(res_flat, predicted_tiled)), reduction_indices=[1])
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
