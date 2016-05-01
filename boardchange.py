@@ -52,16 +52,19 @@ def boardchange(input, position):
             kill_list = []
         if point_in[0] != 18:
             visited = numpy.copy(boundary)
+            visited[point_in[0]][point_in[1]] = 1
             if recursive_dfs([point_in[0] + 1, point_in[1]]):
                 final_kill += kill_list
             kill_list = []
         if point_in[1] != 0:
             visited = numpy.copy(boundary)
+            visited[point_in[0]][point_in[1]] = 1
             if recursive_dfs([point_in[0], point_in[1] - 1]):
                 final_kill += kill_list
             kill_list = []
         if point_in[1] != 18:
             visited = numpy.copy(boundary)
+            visited[point_in[0]][point_in[1]] = 1
             if recursive_dfs([point_in[0], point_in[1] + 1]):
                 final_kill += kill_list
             kill_list = []
