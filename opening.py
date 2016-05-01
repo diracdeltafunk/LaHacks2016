@@ -65,7 +65,7 @@ def oriented_move(board):
                 node = node.children[1]
             elif depth >= boardsum(board):
                 nomove = False
-                return (True, [ord(node.name[2]) - ord('a')][ ord(node.name[3]) - ord('a')])
+                return (True, (ord(node.name[2]) - ord('a'),  ord(node.name[3]) - ord('a')))
                 check_tree = False
             else:
                 check_tree = False
@@ -91,4 +91,4 @@ def make_move(board):
         else:
             i += 1
     if(move_pending):
-        return (False, [0,0])
+        return (False, (0,0))
