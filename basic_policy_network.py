@@ -69,7 +69,10 @@ train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 # accuracy
 y1_flat = tf.reshape(y1, [-1, 19 * 19])
 pos_real_move = tf.argmax(y1_flat, 1)
-percent_predicted = tf.gather(tf.transpose(res_flat), pos_real_move)
+res_flat_unpacked = tf.unpack(res_flat)
+pos_real_move_unpacked = tf.unpack(pos_real_move)
+percent_predicted_list = [tf.gather(res_flat_unpacked[i], pos_real_move_unpacked[i]) for i in range(len(res_flat_unpacked))]
+percent_predicted = tf.pack(percent_predicted_list)
 predicted_tiled = tf.tile(percent_predicted, [1, 19 * 19])
 correct_prediction = tf.reduce_sum(tf.where(tf.greater_equal(res_flat, predicted_tiled)), reduction_indices=[1])
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -81,7 +84,7 @@ tar = tarfile.open("pro.tar.gz", 'r:gz')
 with open('filenames.txt','r') as filenames:
     for num, line in enumerate(filenames):
         batch_in, batch_out = inp.getdata(tar,line[:-1])
-        if num % 10 == 0:
-            train_accuracy = accuracy.eval(feed_dict={x: batch[0], y1: batch[1], keep_prob: 1.0})
+        if num % 2 == 0:
+            train_accuracy = accuracy.eval(feed_dict={x: batch_in, y1: batch_out, keep_prob: 1.0})
             print("step %d, training accuracy %g" % (num, train_accuracy))
         train_step.run(feed_dict={x: batch_in, y1: batch_out, keep_prob: 0.5})
