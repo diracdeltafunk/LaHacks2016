@@ -14,7 +14,7 @@ def getdata(tar, filename):
     answer = np.zeros((19, 19), dtype=np.int)
     starts = [m.start() for m in re.finditer(';', data)]
     length = len(starts) - 1
-    j = 0
+    j1 = 0
     positions, moves = np.zeros((length, 19, 19, 3)), np.zeros((length, 19, 19))
     for i in starts[1:]:
         x, y = ord(data[i + 3]) - ord('a'), ord(data[i + 4]) - ord('a')
@@ -25,7 +25,7 @@ def getdata(tar, filename):
                     pos[i][j][0] = black[i][j]
                     pos[i][j][1] = white[i][j]
                     pos[i][j][2] = ko[i][j]
-            positions[j] = np.copy(pos)
+            positions[j1] = np.copy(pos)
             black[x][y] = 1
         else:
             for i in range(19):
@@ -35,9 +35,9 @@ def getdata(tar, filename):
                     pos[i][j][2] = ko[i][j]
             positions[j] = np.copy(pos)
             white[x][y] = 1
-        moves[j] = np.copy(answer)
+        moves[j1] = np.copy(answer)
         answer[x][y] = 0
-        j += 1
+        j1 += 1
     return [positions, moves]
 
 # res = getdata(tar, "00010.sgf")
