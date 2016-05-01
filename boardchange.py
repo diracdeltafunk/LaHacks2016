@@ -90,4 +90,3 @@ def boardchange(input, position):
     return numpy.transpose([op_stones,my_stones,ko],(1,2,0))
 
 initial = numpy.zeros((19, 19, 3), dtype=numpy.int)
-
