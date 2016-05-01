@@ -105,7 +105,7 @@ saver.restore(sess2, 'saved_variable_network.ckpt')
 ## BEGIN GAMEPLAY CODE
 
 num_moves_considered = 10
-depth_to_consider = 2*3
+depth_to_consider = 5
 
 class GameTree(object):
     def __init__(self, name=None, children=None):
@@ -150,7 +150,7 @@ def do_move(gs, pos, isBlackMove):
         gs = flip(gs)
     return gs
 
-## DEPTH SHOULD ALWAYS BE EVEN
+## DEPTH SHOULD ALWAYS BE ODD
 def growTree(root, width, depth):
     if isinstance(root.name, (np.ndarray, np.generic)):
         if depth == 0:
@@ -175,8 +175,24 @@ def playMove():
     print('Thinking hard about this one...')
     gametree = growTree(GameTree(name=gamestate), num_moves_considered, depth_considered)
     print('I\'ve made a game tree!')
-    direction = minimax(gametree)
+    direction = tMinimax(gametree)
     gamestate = gametree.children[direction].name
+
+def tMin(tree):
+    if tree.childen is None:
+        return tree.name
+    return max([tMax(t) for t in tree.children])
+
+def tMax(tree):
+    if tree.children is None:
+        return tree.name
+    return min([tMax(t) for t in tree.children])
+
+def tMiniMax(tree):
+    if tree.children is None:
+        return 0
+    max_possibility = tMax(tree)
+    return list(map(tMin, tree.children)).index(max_possibility)
 
 gameDone = False
 while not gameDone:
