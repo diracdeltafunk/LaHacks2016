@@ -96,5 +96,5 @@ with open('filenames.txt','r') as filenames:
                 print("step %d, training accuracy %g" % (num, train_accuracy))
             train_step.run(feed_dict={x: batch_in, y1: batch_out, keep_prob: 0.5})
             if num % 5000 == 4999:
-                save_path = saver.save(sess, 'saved_network.ckpt')
-    save_path = saver.save(sess, 'saved_network1.ckpt')
+                save_path = saver.save(sess, 'saved_policy_network.ckpt')
+    save_path = saver.save(sess, 'saved_policy_network_final.ckpt')
