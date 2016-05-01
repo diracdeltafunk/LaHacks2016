@@ -89,5 +89,5 @@ def boardchange(input, position):
         op_stones[point[0]][point[1]] = 0
     return numpy.transpose([op_stones,my_stones,ko],(1,2,0))
 
-initial = numpy.zeros((3, 19, 19), dtype=numpy.int)
+initial = numpy.zeros((19, 19, 3), dtype=numpy.int)
 
