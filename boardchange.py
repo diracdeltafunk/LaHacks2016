@@ -44,6 +44,7 @@ def boardchange(input, position):
                 if surround:
                     kill_list.append([point[0], point[1]])
                 return surround
+
         final_kill = []
         if point_in[0] != 0:
             if recursive_dfs([point_in[0] - 1, point_in[1]]):
@@ -65,7 +66,7 @@ def boardchange(input, position):
                 final_kill += kill_list
             kill_list = []
 
-        return kill_list
+        return final_kill
 
     kill_list = dfs([position[0], position[1]], numpy.copy(my_stones))
     ko = numpy.zeros((19, 19), dtype=numpy.int)
