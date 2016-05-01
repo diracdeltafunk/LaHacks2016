@@ -113,10 +113,12 @@ with g2.as_default():
 ## BEGIN GAMEPLAY CODE
 
 num_moves_considered = 5
-depth_to_consider = 3
+##MUST BE ODD
+##MUST BE MORE THAN ONE
+depth_to_consider = 6
 
 class GameTree(object):
-    def __init__(self, name=None, children=None):
+    def __init__(self, name=[None, None], children=None):
         self.name = name
         self.children = []
         if children is not None:
@@ -129,6 +131,7 @@ class GameTree(object):
         self.children.append(node)
 
 gamestate = np.zeros((19,19,3), dtype=int)
+gametree = GameTree(name=[gamestate,None])
 
 def flip(gs):
     t = np.copy(gs[:,:,0])
@@ -142,9 +145,7 @@ def showBoard():
         result += str(i).zfill(2) + ' '
         for j in range(19):
             if gamestate[i][j][0] == 1:
-                result += '0 '
-            elif gamestate[i][j][1] == 1:
-                result += '# '
+                result += '0 ' enumerate(
             else:
                 result += '+ '
         result += '\n'
@@ -153,104 +154,91 @@ def showBoard():
 def do_move(gs, pos, isBlackMove):
     if not isBlackMove:
         gs = flip(gs)
-#    print(gs[15][3][0])
     gs = bc.boardchange(np.copy(gs), pos)
-#    print(gs[15][3][1])
     if isBlackMove:
         gs = flip(gs)
     return gs
 
-## DEPTH SHOULD ALWAYS BE ODD
-def growTree(root, width, depth):
-    if isinstance(root.name, (np.ndarray, np.generic)):
-        if depth == 0:
-            root.name = sess2.run(res_v, feed_dict={pre_x_v: root.name, keep_prob_v: 1.0})[0][0]
-            root.children = None
-            return root
-#        if root.children is not None:
- #           root.children = [growTree(c,width,depth-1) for c in root.children]
-  #          return root
-        name_cp = np.copy(root.name)
-        p_predicts = sess1.run(res, feed_dict={pre_x: name_cp, keep_prob: 1.0})[0]
-        p_indices = [(i, j) for i, j in itertools.product(*[range(19), range(19)]) if not np.any(root.name[i][j])]
-        p_indices.sort(key=lambda x: p_predicts[x[0]][x[1]], reverse=True)
-#        print(p_indices)
-        root.children = [growTree(GameTree(name=do_move(name_cp, [i,j], True)), width, depth-1) for i,j in p_indices[:10]]
+def updateTree(root, width, depth):
+    if depth == 0:
+        root.name[1] = sess2.run(res_v, feed_dict={pre_x_v: root.name[0], keep_prob_v: 1.0})[0][0]
+        root.children = None
+        return root
+    if root.children is not None and root.children != []:
+        root.children = [updateTree(c,width,depth-1) for c in root.children]
+        return root
+    p_predicts = sess1.run(res, feed_dict={pre_x: root.name[0], keep_prob: 1.0})[0]
+    p_indices = [[i, j] for i, j in itertools.product(*[range(19), range(19)]) if not np.any(root.name[0][i][j])]
+    p_indices.sort(key=lambda x: p_predicts[x[0]][x[1]], reverse=True)
+    root.children = [updateTree(GameTree(name=do_move(np.copy(root.name[0]), x, True)), width, depth-1) for x in p_indices[:width]]
     return root
 
-def playBestMove():
+def moveTree(direction):
+    global gametree
+    gametree = gametree.children[direction]
+
+def matchTreeToState():
     global gamestate
-    global depth_to_consider
-    fuseki_match, fuseki_move = op.make_move(gamestate)
-    if fuseki_match:
-        print('Found a cool fuseki move!')
-        gamestate = do_move(gamestate, fuseki_move, True)
+    global gametree
+    if gametree.children is None or gametree.children == []:
+        gametree = GameTree(name=[gamestate, None])
         return
-    print('Thinking hard about this one...')
-    p_predicts = sess1.run(res, feed_dict={pre_x: np.copy(gamestate), keep_prob: 1.0})[0]
-    p_indices = [[i, j] for i, j in itertools.product(*[range(19), range(19)]) if not np.any(gamestate[i][j])]
-    p_indices.sort(key=lambda x: p_predicts[x[0]][x[1]], reverse=True)
-    bestMove = p_indices[0]
-    gamestate = do_move(gamestate, bestMove, True)
-
-def PlayRandomMove():
-    global gamestate
-    global depth_to_consider
-    print('Thinking hard about this one...')
-    p_indices = [[i, j] for i, j in itertools.product(*[range(19), range(19)]) if not np.any(gamestate[i][j])]
-    random.shuffle(p_indices)
-    bestMove = p_indices[0]
-    gamestate = do_move(gamestate, bestMove, True)
-
+    for c in gametree.children:
+        if gamestate == c.name[0]:
+            gametree = c
+            return
+    gametree = GameTree(name=[gamestate, None])
 
 def playMove():
     global gamestate
     global depth_to_consider
+    global num_moves_considered
+    global gametree
     fuseki_match, fuseki_move = op.make_move(gamestate)
     if fuseki_match:
         print('Found a cool fuseki move!')
         gamestate = do_move(gamestate, fuseki_move, True)
+        matchTreeToState()
         return
     print('Thinking hard about this one...')
-    gametree = growTree(GameTree(name=gamestate), num_moves_considered, depth_to_consider)
+    gametree = updateTree(gametree, num_moves_considered, depth_to_consider)
     print('I\'ve made a game tree!')
-    direction = tMiniMax(gametree)
-    gamestate = gametree.children[direction].name
+    moveTree(tMiniMax(gametree))
+    gamestate = np.copy(gametree.name[0])
 
 def tMin(tree):
-    if tree.children is None or len(tree.children) == 0:
-        return tree.name
+    if tree.children is None or tree.children == []]:
+        return tree.name[1]
     return min([tMax(t) for t in tree.children])
 
 def tMax(tree):
-    if tree.children is None or len(tree.children) == 0:
-        return tree.name
+    if tree.children is None or tree.children == []]:
+        return tree.name[1]
     return max([tMin(t) for t in tree.children])
 
 def tMiniMax(tree):
-    if tree.children is None or len(tree.children) == 0:
-        return 0
+    if tree.children is None or tree.children == []:
+        return tree.name[1]
     max_possibility = tMax(tree)
     return list(map(tMin, tree.children)).index(max_possibility)
 
 gameDone = False
 while not gameDone:
-#    print(showBoard())
     playMove()
- #   playBestMove()
- #   PlayRandomMove()
     print(showBoard())
     player_entered_move = False
     while not player_entered_move:
-      player_move = input('Enter your move, e.g. a15\n').lower()[:3]
+      player_move = input('Enter your move, e.g. a15, or q to be done\n').lower()[:3]
       if len(player_move) >= 2:
-          player_entered_move = True
-      else:
-          print('Couldn\'t understand move.')
-    if player_move == ":q":
+        player_entered_move = True
+      elif player_move == 'q':
         gameDone = True
-    player_move_formatted = [ord(player_move[0]) - ord('a'), int(player_move[1:])]
-    gamestate = do_move(gamestate, player_move_formatted[::-1], False)
+      else:
+        print('Couldn\'t understand move.')
+      if not gameDone:
+        player_move_formatted = [int(player_move[1:]), ord(player_move[0]) - ord('a')]
+        gamestate = do_move(gamestate, player_move_formatted, False)
+        matchTreeToState()
 
 sess1.close()
 sess2.close()
