@@ -24,7 +24,6 @@ def getdata(tar, filename):
         move = j1 - 1
         positions[move] = np.copy(pos)
         pos = bc.boardchange(np.copy(pos), [x, y])
-        print(data[ind - 1])
         if (data[ind - 1] == 'B' and move % 2 == 0) or (data[ind - 1] == 'W' and move % 2 == 1):
             wins[move] = [1, 0]
         else:
