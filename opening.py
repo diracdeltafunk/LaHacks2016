@@ -54,13 +54,12 @@ def boardsum(board):
                 n += board[i][j][k]
     return n
 
-
 def oriented_move(board):
     nomove = True
     node = opening_moves
     check_tree = True
     depth = 0
-    while check_tree :
+    while check_tree:
         if board[ord(node.name[2]) - ord('a')][ ord(node.name[3]) - ord('a')][depth % 2] == 1:
             if len(node.children) != 0 :
                 node = node.children[1]
@@ -70,9 +69,8 @@ def oriented_move(board):
                 check_tree = False
             else:
                 check_tree = False
-    if nomove :
+    if nomove:
         return (False, [0,0])
-
 
 def make_move(board):
     b0 = board
@@ -94,8 +92,3 @@ def make_move(board):
             i += 1
     if(move_pending):
         return (False, [0,0])
-
-
-
-
-
