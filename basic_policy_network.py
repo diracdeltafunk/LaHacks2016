@@ -1,14 +1,13 @@
 import tensorflow as tf
-import training_input as inp
+import training_input_cole as inp
 import tarfile
-import queue
 
 def weight(shape):
-    initial = tf.truncated_normal(shape, stddev=0.1)
+    initial = tf.truncated_normal(shape, stddev=0.01)
     return tf.Variable(initial)
 
 def bias(shape):
-    initial = tf.constant(0.1, shape=shape)
+    initial = tf.constant(0.01, shape=shape)
     return tf.Variable(initial)
 
 def conv2d(x, w):
@@ -17,8 +16,10 @@ def conv2d(x, w):
 def maxpool(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
-x = tf.placeholder(tf.float32, [None, 19, 19, 3])
+sess = tf.InteractiveSession()
 
+x = tf.placeholder(tf.float32, [None, 19, 19, 3])
+batch_size = 50
 w1 = weight([7, 7, 3, 48])
 b1 = bias([48])
 
@@ -47,7 +48,7 @@ w5 = weight([19 * 19 * 32, 2048])
 b5 = bias([2048])
 
 #pool2_flat = tf.reshape(pool2, [-1, 7 * 7 * 64])
-flat = tf.reshape(conv4, [-1, 19 * 19 * 32])
+flat = tf.reshape(conv4, [batch_size, 19 * 19 * 32])
 dense0 = tf.nn.relu(tf.matmul(flat, w5) + b5)
 
 keep_prob = tf.placeholder(tf.float32)
@@ -58,47 +59,37 @@ b6 = bias([19 * 19])
 
 res_flat = tf.nn.softmax(tf.matmul(dense, w6) + b6)
 
-res = tf.reshape(res_flat, [-1, 19, 19])
+res = tf.reshape(res_flat, [batch_size, 19, 19])
 
 y1 = tf.placeholder(tf.float32, [None, 19, 19])
 
-cross_entropy = tf.reduce_mean(-tf.reduce_sum(y1 * tf.log(res), reduction_indices=[1,2]))
-train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
+cross_entropy = tf.reduce_mean(-tf.reduce_sum(y1 * tf.log(res), reduction_indices=[1, 2]))
+train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 
 # accuracy
-y1_flat = tf.reshape(y1, [-1, 19 * 19])
+y1_flat = tf.reshape(y1, [batch_size, 19 * 19])
 pos_real_move = tf.argmax(y1_flat, 1)
-percent_predicted = tf.gather(tf.reshape(res_flat, [19 * 19 * 50]), tf.add((19 * 19) * tf.to_int64(tf.range(0,49,1)), pos_real_move))
-predicted_tiled = tf.tile(percent_predicted, [1, 19 * 19])
-correct_prediction = tf.reduce_sum(tf.where(tf.greater_equal(res_flat, predicted_tiled)), reduction_indices=[1])
+#percent_predicted = tf.gather(tf.reshape(res_flat, [19 * 19 * batch_size]), tf.add((19 * 19) * tf.to_int64(tf.range(0, batch_size, 1)), pos_real_move))
+percent_predicted = tf.diag_part(tf.gather(tf.transpose(res_flat), pos_real_move))
+predicted_tiled = tf.tile(tf.reshape(percent_predicted, [batch_size, 1]), [1, 19 * 19])
+correct_prediction = tf.reduce_sum(tf.to_int64(tf.greater_equal(res_flat, predicted_tiled)), reduction_indices=[1])
+#correct_prediction = tf.equal(tf.argmax(res_flat, 1), tf.argmax(y1_flat, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
+sess.run(tf.initialize_all_variables())
+
+tar = tarfile.open("pro.tar.gz", 'r:gz')
+saver = tf.train.Saver()
 with open('filenames.txt','r') as filenames:
-  sgflist = filenames.read().replace('\n','')
-
-def readSGF(filename_queue):
-    reader = tf.WholeFileReader()
-    sgf_file = reader.read(filename_queue)
-    return inp.getdata(sgf_file)
-
-def input_pipeline(filenames, batch_size, num_epochs=None):
-    filenames_queue = tf.train.string_input_producer(filenames, num_epochs=num_epochs, shuffle=True)
-    examples, labels = readSGF(filename_queue)
-    min_after_dequeue = 1000
-    capacity = min_after_dequeue + 3 * batch_size
-    example_batch, label_batch = tf.train.shuffle_batch([examples, labels], batch_size=batch_size, capacity=capacity, min_after_dequeue=min_after_dequeue, enqueue_many=True)
-    return example_batch, label_batch
-
-with tf.Session() as sess:
-    coord = tf.train.Coordinator()
-    threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-    sess.run(tf.initialize_all_variables())
-    try:
-      while not coord.should_stop():
-        batch_in, batch_out = input_pipeline(sgflist, 50)
-        train_step.run(feed_dict={x: batch_in, y1: batch_out, keep_prob: 0.5})
-    except tf.errors.OutOfRangeError:
-      print('Done training')
-    finally:
-      coord.request_stop()
-    coord.join(threads)
+    for num, line in enumerate(filenames):
+#        print(line)
+        bad, batch_in, batch_out = inp.getdata(tar, line[:-1])
+#        print(batch_out.shape)
+#        print(batch_out[20])
+        if not bad:
+            if num % 50 == 0:
+#            print(res_flat.eval(feed_dict={x: batch_in, y1: batch_out, keep_prob: 1.0}))
+                train_accuracy = accuracy.eval(feed_dict={x: batch_in, y1: batch_out, keep_prob: 1.0})
+                print("step %d, training accuracy %g" % (num, train_accuracy))
+            train_step.run(feed_dict={x: batch_in, y1: batch_out, keep_prob: 0.5})
+    save_path = saver.save(sess, 'saved_network.ckpt')
