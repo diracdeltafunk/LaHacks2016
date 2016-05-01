@@ -161,8 +161,8 @@ def growTree(root, width, depth):
             return root
         name_cp = np.copy(root.name)
         p_predicts = sess1.run(res, feed_dict={x: name_cp, keep_prob: 1.0})
-        p_indices = [i,j for i,j in itertools.product(*[range(19), range(19)]) if not numpy.any(root.name[i][j])]
-        p_indices.sort(key=lambda (i,j): p_predicts[i][j], reverse=True)
+        p_indices = [(i, j) for i, j in itertools.product(*[range(19), range(19)]) if not np.any(root.name[i][j])]
+        p_indices.sort(key=lambda x: p_predicts[x[0]][x[1]], reverse=True)
         root.children = [growTree(flip(do_move(name_cp, [i,j], True)), width, depth-1) for i,j in p_indices[:10]]
     return root
 
@@ -178,19 +178,19 @@ def playMove():
     direction = minimax(gametree)
     gamestate = gametree.children[direction].name
 
-gameDone = false
+gameDone = False
 while not gameDone:
     playMove()
     print(showBoard())
-    player_entered_move = false
+    player_entered_move = False
     while not player_entered_move:
       player_move = input('Enter your move, e.g. a15').lower()[:3]
       if len(player_move) < 2:
-          player_entered_move = true
+          player_entered_move = True
       else:
           print('Couldn\'t understand move.')
     if player_move == ":q":
-        gameDone = true
+        gameDone = True
     player_move_formatted = [ord(player_move[0]) - ord('a'), int(player_move[1:])]
     gamestate = do_move(gamestate, player_move_formatted, False)
 
