@@ -14,9 +14,8 @@ def getdata(tar, filename):
     answer = np.zeros((19, 19), dtype=np.int)
     starts = [m.start() for m in re.finditer(';', data)]
     length = len(starts) - 1
-    j1 = 0
-    positions, moves = np.zeros((length, 19, 19, 3)), np.zeros((length, 19, 19))
-    for i in starts[1:]:
+    positions, moves = np.zeros((length, 19, 19, 3), dtype=np.int), np.zeros((length, 19, 19), dtype=np.int)
+    for j1, i in enumerate(starts[1:]):
         x, y = ord(data[i + 3]) - ord('a'), ord(data[i + 4]) - ord('a')
         answer[x][y] = 1
         if data[i + 1] == 'B':
@@ -37,8 +36,7 @@ def getdata(tar, filename):
             white[x][y] = 1
         moves[j1] = np.copy(answer)
         answer[x][y] = 0
-        j1 += 1
-    return [positions, moves]
+    return positions, moves
 
 # res = getdata(tar, "00010.sgf")
 # arr = res[11][3]
