@@ -1,6 +1,7 @@
 import tensorflow as tf
 import training_input as inp
 import tarfile
+import queue
 
 def weight(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)
@@ -15,8 +16,6 @@ def conv2d(x, w):
 
 def maxpool(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
-
-sess = tf.InteractiveSession()
 
 x = tf.placeholder(tf.float32, [None, 19, 19, 3])
 
@@ -69,19 +68,37 @@ train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 # accuracy
 y1_flat = tf.reshape(y1, [-1, 19 * 19])
 pos_real_move = tf.argmax(y1_flat, 1)
-percent_predicted = tf.diag_part(tf.transpose(tf.gather(tf.transpose(res_flat), pos_real_move)))
+percent_predicted = tf.gather(tf.reshape(res_flat, [19 * 19 * 50]), tf.add((19 * 19) * tf.to_int64(tf.range(0,49,1)), pos_real_move))
 predicted_tiled = tf.tile(percent_predicted, [1, 19 * 19])
 correct_prediction = tf.reduce_sum(tf.where(tf.greater_equal(res_flat, predicted_tiled)), reduction_indices=[1])
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-sess.run(tf.initialize_all_variables())
-
-tar = tarfile.open("pro.tar.gz", 'r:gz')
-
 with open('filenames.txt','r') as filenames:
-    for num, line in enumerate(filenames):
-        batch_in, batch_out = inp.getdata(tar,line[:-1])
-        if num % 2 == 0:
-            train_accuracy = accuracy.eval(feed_dict={x: batch_in, y1: batch_out, keep_prob: 1.0})
-            print("step %d, training accuracy %g" % (num, train_accuracy))
+  sgflist = filenames.read().replace('\n','')
+
+def readSGF(filename_queue):
+    reader = tf.WholeFileReader()
+    sgf_file = reader.read(filename_queue)
+    return inp.getdata(sgf_file)
+
+def input_pipeline(filenames, batch_size, num_epochs=None):
+    filenames_queue = tf.train.string_input_producer(filenames, num_epochs=num_epochs, shuffle=True)
+    examples, labels = readSGF(filename_queue)
+    min_after_dequeue = 1000
+    capacity = min_after_dequeue + 3 * batch_size
+    example_batch, label_batch = tf.train.shuffle_batch([examples, labels], batch_size=batch_size, capacity=capacity, min_after_dequeue=min_after_dequeue, enqueue_many=True)
+    return example_batch, label_batch
+
+with tf.Session() as sess:
+    coord = tf.train.Coordinator()
+    threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+    sess.run(tf.initialize_all_variables())
+    try:
+      while not coord.should_stop():
+        batch_in, batch_out = input_pipeline(sgflist, 50)
         train_step.run(feed_dict={x: batch_in, y1: batch_out, keep_prob: 0.5})
+    except tf.errors.OutOfRangeError:
+      print('Done training')
+    finally:
+      coord.request_stop()
+    coord.join(threads)
