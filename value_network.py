@@ -18,49 +18,49 @@ def maxpool(x):
 
 sess = tf.InteractiveSession()
 
-x = tf.placeholder(tf.float32, [None, 19, 19, 3])
+x_v = tf.placeholder(tf.float32, [None, 19, 19, 3])
 batch_size = 50
-w1 = weight([7, 7, 3, 48])
-b1 = bias([48])
+w1_v = weight([7, 7, 3, 48])
+b1_v = bias([48])
 
-conv1 = tf.nn.relu(conv2d(x, w1) + b1)
+conv1_v = tf.nn.relu(conv2d(x_v, w1_v) + b1_v)
 #pool1 = maxpool(conv1)
 
-w3 = weight([5, 5, 48, 32])
-b3 = bias([32])
+w3_v = weight([5, 5, 48, 32])
+b3_v = bias([32])
 
-conv3 = tf.nn.relu(conv2d(conv1, w3) + b3)
+conv3_v = tf.nn.relu(conv2d(conv1_v, w3_v) + b3_v)
 #pool3 = maxpool(conv3)
 
-w4 = weight([5, 5, 32, 32])
-b4 = bias([32])
+w4_v = weight([5, 5, 32, 32])
+b4_v = bias([32])
 
-conv4 = tf.nn.relu(conv2d(conv3, w4) + b4)
+conv4_v = tf.nn.relu(conv2d(conv3_v, w4_v) + b4_v)
 #pool4 = maxpool(conv4)
 
-w5 = weight([19 * 19 * 32, 2048])
-b5 = bias([2048])
+w5_v = weight([19 * 19 * 32, 2048])
+b5_v = bias([2048])
 
 #pool2_flat = tf.reshape(pool2, [-1, 7 * 7 * 64])
-flat = tf.reshape(conv4, [batch_size, 19 * 19 * 32])
-dense0 = tf.nn.relu(tf.matmul(flat, w5) + b5)
+flat_v = tf.reshape(conv4_v, [batch_size_v, 19 * 19 * 32])
+dense0_v = tf.nn.relu(tf.matmul(flat, w5_v) + b5_v)
 
-keep_prob = tf.placeholder(tf.float32)
-dense = tf.nn.dropout(dense0, keep_prob)
+keep_prob_v = tf.placeholder(tf.float32)
+dense_v = tf.nn.dropout(dense0_v, keep_prob_v)
 
-w6 = weight([2048, 2])
-b6 = bias([2])
+w6_v = weight([2048, 2])
+b6_v = bias([2])
 
-res_flat = tf.nn.softmax(tf.matmul(dense, w6) + b6)
+res_flat_v = tf.nn.softmax(tf.matmul(dense, w6_v) + b6_v)
 
-res = tf.reshape(res_flat, [batch_size, 2])
+res_v = tf.reshape(res_flat_v, [batch_size, 2])
 
-y1 = tf.placeholder(tf.float32, [None, 2])
+y1_v = tf.placeholder(tf.float32, [None, 2])
 
-cross_entropy = tf.reduce_mean(-tf.reduce_sum(y1 * tf.log(res), reduction_indices=[1]))
-train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
-correct_prediction = tf.equal(tf.argmax(res, 1), tf.argmax(y1, 1))
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+cross_entropy_v = tf.reduce_mean(-tf.reduce_sum(y1_v * tf.log(res_v), reduction_indices=[1]))
+train_step_v = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy_v)
+correct_prediction_v = tf.equal(tf.argmax(res_v, 1), tf.argmax(y1_v, 1))
+accuracy_v = tf.reduce_mean(tf.cast(correct_prediction_v, tf.float32))
 
 sess.run(tf.initialize_all_variables())
 
@@ -75,9 +75,11 @@ with open('filenames.txt', 'r') as filenames:
 #        print(batch_out.shape)
 #        print(batch_out[20])
         if not bad:
-            if num % 50 == 0:
+            if num % 100 == 0:
 #            print(res_flat.eval(feed_dict={x: batch_in, y1: batch_out, keep_prob: 1.0}))
                 train_accuracy = accuracy.eval(feed_dict={x: batch_in, y1: batch_out, keep_prob: 1.0})
                 print("step %d, training accuracy %.4f" % (num, train_accuracy))
+            if num % 5000 == 4999:
+                saver.save(sess, 'saved_value_network.ckpt')
             train_step.run(feed_dict={x: batch_in, y1: batch_out, keep_prob: 0.5})
-    save_path = saver.save(sess, 'saved_network.ckpt')
+    save_path = saver.save(sess, 'saved_value_network_final.ckpt')
