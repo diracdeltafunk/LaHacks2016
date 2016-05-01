@@ -19,85 +19,93 @@ def conv2d(x, w):
 def maxpool(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
-x = tf.placeholder(tf.float32, [19, 19, 3])
-w1 = weight([7, 7, 3, 48])
-b1 = bias([48])
-
-conv1 = tf.nn.relu(conv2d(x, w1) + b1)
-
-w2 = weight([5, 5, 48, 32])
-b2 = bias([32])
-
-conv2 = tf.nn.relu(conv2d(conv1, w2) + b2)
-
-w3 = weight([5, 5, 32, 32])
-b3 = bias([32])
-
-conv3 = tf.nn.relu(conv2d(conv2, w3) + b3)
-
-w4 = weight([5, 5, 32, 32])
-b4 = bias([32])
-
-conv4 = tf.nn.relu(conv2d(conv3, w4) + b4)
-
-w5 = weight([19 * 19 * 32, 2048])
-b5 = bias([2048])
-
-flat = tf.reshape(conv4, [19 * 19 * 32])
-dense0 = tf.nn.relu(tf.matmul(flat, w5) + b5)
-
-keep_prob = tf.placeholder(tf.float32)
-dense = tf.nn.dropout(dense0, keep_prob)
-
-w6 = weight([2048, 19 * 19])
-b6 = bias([19 * 19])
-
-res_flat = tf.nn.softmax(tf.matmul(dense, w6) + b6)
-
-res = tf.reshape(res_flat, [19, 19])
-
-x_v = tf.placeholder(tf.float32, [19, 19, 3])
-w1_v = weight([7, 7, 3, 48])
-b1_v = bias([48])
-
-conv1_v = tf.nn.relu(conv2d(x_v, w1_v) + b1_v)
-
-w3_v = weight([5, 5, 48, 32])
-b3_v = bias([32])
-
-conv3_v = tf.nn.relu(conv2d(conv1_v, w3_v) + b3_v)
-
-w4_v = weight([5, 5, 32, 32])
-b4_v = bias([32])
-
-conv4_v = tf.nn.relu(conv2d(conv3_v, w4_v) + b4_v)
-
-w5_v = weight([19 * 19 * 32, 2048])
-b5_v = bias([2048])
-
-flat_v = tf.reshape(conv4_v, [19 * 19 * 32])
-dense0_v = tf.nn.relu(tf.matmul(flat, w5_v) + b5_v)
-
-keep_prob_v = tf.placeholder(tf.float32)
-dense_v = tf.nn.dropout(dense0_v, keep_prob_v)
-
-w6_v = weight([2048, 2])
-b6_v = bias([2])
-
-res_flat_v = tf.nn.softmax(tf.matmul(dense, w6_v) + b6_v)
-
-res_v = tf.reshape(res_flat_v, [2])
-
 g1 = tf.Graph()
 g2 = tf.Graph()
+
+with g1.as_default():
+    x = tf.placeholder(tf.float32, [19, 19, 3])
+    w1 = weight([7, 7, 3, 48])
+    b1 = bias([48])
+
+    conv1 = tf.nn.relu(conv2d(x, w1) + b1)
+
+    w2 = weight([5, 5, 48, 32])
+    b2 = bias([32])
+
+    conv2 = tf.nn.relu(conv2d(conv1, w2) + b2)
+
+    w3 = weight([5, 5, 32, 32])
+    b3 = bias([32])
+
+    conv3 = tf.nn.relu(conv2d(conv2, w3) + b3)
+
+    w4 = weight([5, 5, 32, 32])
+    b4 = bias([32])
+
+    conv4 = tf.nn.relu(conv2d(conv3, w4) + b4)
+
+    w5 = weight([19 * 19 * 32, 2048])
+    b5 = bias([2048])
+
+    flat = tf.reshape(conv4, [19 * 19 * 32])
+    dense0 = tf.nn.relu(tf.matmul(flat, w5) + b5)
+
+    keep_prob = tf.placeholder(tf.float32)
+    dense = tf.nn.dropout(dense0, keep_prob)
+
+    w6 = weight([2048, 19 * 19])
+    b6 = bias([19 * 19])
+
+    res_flat = tf.nn.softmax(tf.matmul(dense, w6) + b6)
+
+    res = tf.reshape(res_flat, [19, 19])
+
+with g2.as_default():
+    x_v = tf.placeholder(tf.float32, [19, 19, 3])
+    w1_v = weight([7, 7, 3, 48])
+    b1_v = bias([48])
+
+    conv1_v = tf.nn.relu(conv2d(x_v, w1_v) + b1_v)
+
+    w3_v = weight([5, 5, 48, 32])
+    b3_v = bias([32])
+
+    conv3_v = tf.nn.relu(conv2d(conv1_v, w3_v) + b3_v)
+
+    w4_v = weight([5, 5, 32, 32])
+    b4_v = bias([32])
+
+    conv4_v = tf.nn.relu(conv2d(conv3_v, w4_v) + b4_v)
+
+    w5_v = weight([19 * 19 * 32, 2048])
+    b5_v = bias([2048])
+
+    flat_v = tf.reshape(conv4_v, [19 * 19 * 32])
+    dense0_v = tf.nn.relu(tf.matmul(flat, w5_v) + b5_v)
+
+    keep_prob_v = tf.placeholder(tf.float32)
+    dense_v = tf.nn.dropout(dense0_v, keep_prob_v)
+
+    w6_v = weight([2048, 2])
+    b6_v = bias([2])
+
+    res_flat_v = tf.nn.softmax(tf.matmul(dense, w6_v) + b6_v)
+
+    res_v = tf.reshape(res_flat_v, [2])
+
 sess1 = tf.Session(graph=g1)
-sess1 = tf.Session(graph=g2)
+sess2 = tf.Session(graph=g2)
+
+saver = tf.train.Saver()
+
+saver.restore(sess1, 'saved_policy_network.ckpt')
+saver.restore(sess2, 'saved_variable_network.ckpt')
 
 ## END NEURAL NET CODE
 ## BEGIN GAMEPLAY CODE
 
 num_moves_considered = 10
-depth_to_consider = 6
+depth_to_consider = 2*3
 
 class GameTree(object):
     def __init__(self, name=None, children=None):
@@ -170,11 +178,6 @@ def playMove():
     direction = minimax(gametree)
     gamestate = gametree.children[direction].name
 
-def shutdown():
-    sess1.close()
-    sess2.close()
-    sys.exit(0)
-
 gameDone = false
 while not gameDone:
     playMove()
@@ -187,6 +190,10 @@ while not gameDone:
       else:
           print('Couldn\'t understand move.')
     if player_move == ":q":
-        shutdown()
+        gameDone = true
     player_move_formatted = [ord(player_move[0]) - ord('a'), int(player_move[1:])]
     gamestate = do_move(gamestate, player_move_formatted, False)
+
+sess1.close()
+sess2.close()
+sys.exit(0)
