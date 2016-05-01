@@ -1,5 +1,5 @@
 import tensorflow as tf
-import training_input_cole as inp
+import training_input as inp
 import tarfile
 import random
 
@@ -16,8 +16,6 @@ def conv2d(x, w):
 
 def maxpool(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
-
-sess = tf.InteractiveSession()
 
 x = tf.placeholder(tf.float32, [None, 19, 19, 3])
 batch_size = 50
@@ -77,8 +75,6 @@ correct_prediction = tf.reduce_sum(tf.to_int64(tf.greater_equal(res_flat, predic
 #correct_prediction = tf.equal(tf.argmax(res_flat, 1), tf.argmax(y1_flat, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-sess.run(tf.initialize_all_variables())
-
 tar = tarfile.open("pro.tar.gz", 'r:gz')
 saver = tf.train.Saver()
 
@@ -86,6 +82,7 @@ with open('filenames.txt','r') as filenames:
   sgflist = filenames.read().splitlines()
 
 with tf.Session() as sess:
+    sess.run(tf.initialize_all_variables())
     def queueingThread(coord):
         while not coord.should_stop():
             next_file = sgflist.pop(0)
@@ -96,8 +93,8 @@ with tf.Session() as sess:
     def trainingThread1(coord):
         while not coord.should_stop():
             batch_in, batch_out = training_queue_1.dequeque_many(50)
-            train_step.run(feed_dict={x: batch_in, y: batch_out, keep_prob: 0.5})
-            print(accuracy.eval(feed_dict={x: batch_in, y: batch_out, keep_prob: 1.0}))
+            train_step.run(feed_dict={x: batch_in, y1: batch_out, keep_prob: 0.5})
+            print(accuracy.eval(feed_dict={x: batch_in, y1: batch_out, keep_prob: 1.0}))
 
     training_queue_1 = tf.FIFOQueue(3500000, [tf.int32, tf.int32])
     training_queue_2 = tf.FIFOQueue(3500000, [tf.int32, tf.int32])
@@ -105,11 +102,9 @@ with tf.Session() as sess:
     tf.train.add_queue_runner(qr1)
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-    sess.run(tf.initialize_all_variables())
     try:
         trainingThread1(coord)
     except tf.errors.OutOfRangeError:
       print('Done training')
     finally:
       coord.request_stop()
-    coord.join(threads)
