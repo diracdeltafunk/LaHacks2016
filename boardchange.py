@@ -8,7 +8,7 @@ def boardchange(input, position):
 
     def dfs(point_in, boundary):
         kill_list = []
-        visited = boundary
+        visited = numpy.copy(boundary)
         visited[point_in[0]][point_in[1]] = 1
 
         def recursive_dfs(point):
@@ -48,10 +48,13 @@ def boardchange(input, position):
         if point_in[0] != 0:
             recursive_dfs([point_in[0] - 1, point_in[1]])
         if point_in[0] != 18:
+            visited = numpy.copy(boundary)
             recursive_dfs([point_in[0] + 1, point_in[1]])
         if point_in[1] != 0:
+            visited = numpy.copy(boundary)
             recursive_dfs([point_in[0], point_in[1] - 1])
         if point_in[1] != 18:
+            visited = numpy.copy(boundary)
             recursive_dfs([point_in[0], point_in[1] + 1])
 
         return kill_list
@@ -74,5 +77,5 @@ def boardchange(input, position):
         op_stones[point[0]][point[1]] = 0
     return numpy.transpose([op_stones,my_stones,ko],(1,2,0))
 
-
+initial = numpy.zeros((3, 19, 19), dtype=numpy.int)
 
